@@ -125,7 +125,7 @@ class LocView:
         self.info.setSize(20)
         self.info.setFace("courier")
 
-        self.update(state)
+        self.update(state,None)
 
     def setAgent(self, name):
         self.agentName.setText(name)
@@ -136,7 +136,7 @@ class LocView:
     def setInfo(self, info):
         self.info.setText(info)
 
-    def update(self, state, P=None):
+    def update(self, state, P):
         # View state in exiting window
         for loc, cell in self.cells.items():
             if loc in state.walls:
