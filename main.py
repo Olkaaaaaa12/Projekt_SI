@@ -136,7 +136,7 @@ class LocView:
     def setInfo(self, info):
         self.info.setText(info)
 
-    def update(self, state, P):
+    def update(self, state, P=None):
         # View state in exiting window
         for loc, cell in self.cells.items():
             if loc in state.walls:
@@ -230,7 +230,7 @@ def main():
         view.update(env, P)
         update(rate)
         # uncomment to pause before action
-        view.pause()
+        #view.pause()
 
         env.doAction(action)
 
