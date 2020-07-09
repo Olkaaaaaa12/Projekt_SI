@@ -146,8 +146,6 @@ class LocView:
                 if P is not None:
                     for i, dir in enumerate(DIRECTIONS):
                         c = int(round(P[loc[0], loc[1], i] * 255))
-                        if c > 240:
-                            print("tutaj!!!")
                         self.dir_cells[(loc[0], loc[1], dir)].setFill('#ff%02x%02x' % (255 - c, 255 - c))
         if self.agt:
             self.agt.undraw()

@@ -49,8 +49,6 @@ class LocAgent:
         for i in range(5):
             self.P = prob * np.ones([len(self.locations), i], dtype=np.float)
         self.newP = []
-        self.left = 1
-        self.right = 1
     def __call__(self, percept):
         # update posterior
         if self.prev_action != None:
@@ -206,36 +204,18 @@ class LocAgent:
             self.P = self.newP / self.newP.sum(keepdims=1)
 
         action = 'forward'
-        # if there is a wall ahead then lets turn
         if 'fwd' in percept and self.prev_action == ['forward'] and 'right' in percept and 'left' not in percept:
-            action = ['turnleft']
-            self.left +=1
+            action = 'turnleft'
         elif 'fwd' in percept and self.prev_action == ['forward'] and 'left' in percept and 'right' not in percept:
-            action = ['turnright']
-            self.right +=1
+            action = 'turnright'
         elif 'fwd' in percept and self.prev_action == ['forward']:
             action = np.random.choice(['turnleft', 'turnright'], 1, p=[0.9, 0.1])
-        elif self.prev_action == ['turnleft'] and 'fwd' in percept and self.left < 4:
-            action = ['turnleft']
-            self.left += 1
-        elif self.prev_action == ['turnright'] and 'fwd' in percept and self.right < 4:
-            action = ['turnright']
-            self.right += 1
-        elif self.left == 4:
-            action = ['forward']
-            self.left = 1
-        elif self.right == 4:
-            action = ['forward']
-            self.right = 1
+        elif self.prev_action == ['turnleft'] and 'fwd' in percept:
+            action = 'turnleft'
+        elif self.prev_action == ['turnright'] and 'fwd' in percept:
+            action = 'turnright'
         else:
             action = np.random.choice(['forward', 'turnleft', 'turnright'], 1, p=[0.9, 0.05, 0.05])
-            if action == ['forward']:
-                self.left = 1
-                self.right = 1
-            if action == ['turnright']:
-                self.right +=1
-            if action == ['turnleft']:
-                self.left +=1
 
         self.prev_action = action
 
