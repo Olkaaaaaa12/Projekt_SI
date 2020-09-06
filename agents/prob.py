@@ -32,11 +32,11 @@ class LocAgent:
         self.di_to_idx = {di: idx for idx, di in enumerate(['N', 'E', 'S', 'W'])}
         self.eps_perc = eps_perc
         self.eps_move = eps_move
-        self.array = [0] * 42
-        for i in range(42):
-            self.array[i] = [0] * 42
-        self.array2 = [0] * 42
-        for k in range(42):
+        self.array = [0] * len(self.locations)
+        for i in range(len(self.locations)):
+            self.array[i] = [0] * len(self.locations)
+        self.array2 = [0] * len(self.locations)
+        for k in range(len(self.locations)):
             self.array2[k] = [0] * 4
         self.array3 = [0] * 4
         for k in range(4):
@@ -49,6 +49,18 @@ class LocAgent:
         for i in range(5):
             self.P = prob * np.ones([len(self.locations), i], dtype=np.float)
         self.newP = []
+
+    def value(self, percept, p, ret_loc, val):
+        if (ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > self.size - 1) and p in percept:
+            val = val * 0.9
+        elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= self.size - 1 and p not in percept:
+            val = val * 0.9
+        elif (ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > self.size - 1) and p not in percept:
+            val = val * 0.1
+        elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= self.size - 1 and p in percept:
+            val = val * 0.1
+        return val
+
     def __call__(self, percept):
         # update posterior
         if self.prev_action != None:
@@ -73,11 +85,12 @@ class LocAgent:
                             ind2 = ind + 1
                         self.array3[ind][ind] = 0.05
                         self.array3[ind][ind2] = 0.95
-                self.array = [0] * 42
-                for i in range(42):
-                    self.array[i] = [0] * 42
-                for j in range(42):
+                self.array = [0] * len(self.locations)
+                for i in range(len(self.locations)):
+                    self.array[i] = [0] * len(self.locations)
+                for j in range(len(self.locations)):
                     self.array[j][j] = 1
+
             if self.prev_action == 'forward':
                 self.array3 = [0] * 4
                 for k in range(4):
@@ -85,12 +98,13 @@ class LocAgent:
                 for d in ['N', 'E', 'S', 'W']:
                     ind = self.di_to_idx[d]
                     self.array3[ind][ind] = 1
-                self.array = [0] * 42
-                for i in range(42):
-                    self.array[i] = [0] * 42
+                self.array = [0] * len(self.locations)
+                for i in range(len(self.locations)):
+                    self.array[i] = [0] * len(self.locations)
 
                 for loca in self.locations:
                     if 'bump' in percept:
+                        ind = self.loc_to_idx[loca]      #BUMP
                         self.array[ind][ind] = 1
                     else:
                         wall = [0, 0, 0, 0]
@@ -106,7 +120,7 @@ class LocAgent:
                             elif d == 'S':
                                 ret_loc = (loca[0], loca[1] - 1)
                             loc.append(ret_loc)
-                            if ret_loc in self.walls or (ret_loc[0] < 0 or ret_loc[0] > 15):
+                            if ret_loc in self.walls or (ret_loc[0] < 0 or ret_loc[0] > self.size - 1):
                                 wall[ind] = 1
                                 cnt += 1
                         ind = self.loc_to_idx[loca]
@@ -119,8 +133,8 @@ class LocAgent:
                                     self.array[ind][ind1] = val
                         else:
                             self.array[ind][ind] = 0
-            self.array2 = [0] * 42
-            for k in range(42):
+            self.array2 = [0] * len(self.locations)
+            for k in range(len(self.locations)):
                 self.array2[k] = [0] * 4
             for loca in self.locations:
                 val = 1
@@ -135,14 +149,7 @@ class LocAgent:
                                 ret_loc = (loca[0] - 1, loca[1])
                             elif p == 'bckwd':
                                 ret_loc = (loca[0], loca[1] - 1)
-                            if ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > 15 and p in percept:
-                                val = val * 0.9
-                            elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= 15 and p not in percept:
-                                val = val * 0.9
-                            elif ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > 15 and p not in percept:
-                                val = val * 0.1
-                            elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= 15 and p in percept:
-                                val = val * 0.1
+                            val = self.value(percept, p, ret_loc, val)
                         if d == 'E':
                             if p == 'fwd':
                                 ret_loc = (loca[0] + 1, loca[1])
@@ -152,14 +159,7 @@ class LocAgent:
                                 ret_loc = (loca[0], loca[1] + 1)
                             elif p == 'bckwd':
                                 ret_loc = (loca[0] - 1, loca[1])
-                            if ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > 15 and p in percept:
-                                val = val * 0.9
-                            elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= 15 and p not in percept:
-                                val = val * 0.9
-                            elif ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > 15 and p not in percept:
-                                val = val * 0.1
-                            elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= 15 and p in percept:
-                                val = val * 0.1
+                            val = self.value(percept, p, ret_loc, val)
                         if d == 'S':
                             if p == 'fwd':
                                 ret_loc = (loca[0], loca[1] - 1)
@@ -169,14 +169,7 @@ class LocAgent:
                                 ret_loc = (loca[0] + 1, loca[1])
                             elif p == 'bckwd':
                                 ret_loc = (loca[0], loca[1] + 1)
-                            if ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > 15 and p in percept:
-                                val = val * 0.9
-                            elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= 15 and p not in percept:
-                                val = val * 0.9
-                            elif ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > 15 and p not in percept:
-                                val = val * 0.1
-                            elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= 15 and p in percept:
-                                val = val * 0.1
+                            val = self.value(percept, p, ret_loc, val)
                         if d == 'W':
                             if p == 'fwd':
                                 ret_loc = (loca[0] - 1, loca[1])
@@ -186,21 +179,12 @@ class LocAgent:
                                 ret_loc = (loca[0], loca[1] - 1)
                             elif p == 'bckwd':
                                 ret_loc = (loca[0] + 1, loca[1])
-                            if ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > 15 and p in percept:
-                                val = val * 0.9
-                            elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= 15 and p not in percept:
-                                val = val * 0.9
-                            elif ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > 15 and p not in percept:
-                                val = val * 0.1
-                            elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= 15 and p in percept:
-                                val = val * 0.1
+                            val = self.value(percept, p, ret_loc, val)
                     ind = self.loc_to_idx[loca]
                     idx = self.di_to_idx[d]
                     self.array2[ind][idx] = val
                     val = 1
-            self.newP = np.dot(np.transpose(self.array), self.P)
-            self.newP = np.dot(self.newP, self.array3)
-            self.newP = np.multiply(self.newP, self.array2)
+            self.newP = np.multiply(np.dot(np.dot(np.transpose(self.array), self.P), self.array3), self.array2)
             self.P = self.newP / self.newP.sum(keepdims=1)
 
         action = 'forward'
