@@ -32,13 +32,13 @@ class LocAgent:
         self.di_to_idx = {di: idx for idx, di in enumerate(['N', 'E', 'S', 'W'])}
         self.eps_perc = eps_perc
         self.eps_move = eps_move
-        self.array = [0] * len(self.locations)
+        self.array = [0] * len(self.locations)    #self.array - the probability of transition between locations
         for i in range(len(self.locations)):
             self.array[i] = [0] * len(self.locations)
-        self.array2 = [0] * len(self.locations)
+        self.array2 = [0] * len(self.locations)   #self.array2 - compliance of the sensor readings
         for k in range(len(self.locations)):
             self.array2[k] = [0] * 4
-        self.array3 = [0] * 4
+        self.array3 = [0] * 4                     #self.array3 - the probability of agent's orientation
         for k in range(4):
             self.array3[k] = [0] * 4
         # previous action
@@ -46,19 +46,19 @@ class LocAgent:
 
         prob = 1.0 / len(self.locations)
         prob = prob/4
-        for i in range(5):
-            self.P = prob * np.ones([len(self.locations), i], dtype=np.float)
+
+        self.P = prob * np.ones([len(self.locations), 4], dtype=np.float)
         self.newP = []
 
     def value(self, percept, p, ret_loc, val):
         if (ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > self.size - 1) and p in percept:
-            val = val * 0.9
+            val = val * (1 - self.eps_perc)
         elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= self.size - 1 and p not in percept:
-            val = val * 0.9
+            val = val * (1 - self.eps_perc)
         elif (ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > self.size - 1) and p not in percept:
-            val = val * 0.1
+            val = val * self.eps_perc
         elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= self.size - 1 and p in percept:
-            val = val * 0.1
+            val = val * self.eps_perc
         return val
 
     def __call__(self, percept):
@@ -69,48 +69,45 @@ class LocAgent:
                 for k in range(4):
                     self.array3[k] = [0] * 4
                 for d in ['N', 'E', 'S', 'W']:
+                    ind = self.di_to_idx[d]
+                    self.array3[ind][ind] = self.eps_move
                     if self.prev_action == 'turnleft':
-                        ind = self.di_to_idx[d]
                         if ind == 0:
                             ind2 = 3
                         else:
                             ind2 = ind - 1
-                        self.array3[ind][ind] = 0.05
-                        self.array3[ind][ind2] = 0.95
+                        self.array3[ind][ind2] = 1 - self.eps_move
                     if self.prev_action == 'turnright':
-                        ind = self.di_to_idx[d]
                         if ind == 3:
                             ind2 = 0
                         else:
                             ind2 = ind + 1
-                        self.array3[ind][ind] = 0.05
-                        self.array3[ind][ind2] = 0.95
+                        self.array3[ind][ind2] = 1 - self.eps_move
                 self.array = [0] * len(self.locations)
                 for i in range(len(self.locations)):
                     self.array[i] = [0] * len(self.locations)
                 for j in range(len(self.locations)):
-                    self.array[j][j] = 1
-
+                    self.array[j][j] = 1           #if the agent turned, he stayed in the same field
             if self.prev_action == 'forward':
                 self.array3 = [0] * 4
                 for k in range(4):
                     self.array3[k] = [0] * 4
                 for d in ['N', 'E', 'S', 'W']:
                     ind = self.di_to_idx[d]
-                    self.array3[ind][ind] = 1
+                    self.array3[ind][ind] = 1      #if the agent went forward his orientation stayed the same
                 self.array = [0] * len(self.locations)
                 for i in range(len(self.locations)):
                     self.array[i] = [0] * len(self.locations)
 
                 for loca in self.locations:
                     if 'bump' in percept:
-                        ind = self.loc_to_idx[loca]      #BUMP
-                        self.array[ind][ind] = 1
+                        ind = self.loc_to_idx[loca]
+                        self.array[ind][ind] = 1            #if the agent hit the wall he stayed in the same field
                     else:
                         wall = [0, 0, 0, 0]
                         loc = []
                         cnt = 0
-                        for ind, d in enumerate(['N', 'E', 'S', 'W']):
+                        for ind, d in enumerate(['N', 'E', 'S', 'W']): #checking four directions in which agent could go
                             if d == 'N':
                                 ret_loc = (loca[0], loca[1] + 1)
                             elif d == 'E':
@@ -122,25 +119,23 @@ class LocAgent:
                             loc.append(ret_loc)
                             if ret_loc in self.walls or (ret_loc[0] < 0 or ret_loc[0] > self.size - 1):
                                 wall[ind] = 1
-                                cnt += 1
+                                cnt += 1           #count locations where agent can't go
                         ind = self.loc_to_idx[loca]
                         if cnt < 4:
-                            val = 0.95/(4 - cnt)
-                            self.array[ind][ind] = 0.05
+                            val = 0.95/(4 - cnt)    #if agent can go to few locations divide 0.95 by numer of locations
+                            self.array[ind][ind] = 0.05   #e.g. agent can go to two locations, so he is in one of them for 0.475 per cent
                             for i, l in enumerate(loc):
                                 if wall[i] == 0:
                                     ind1 = self.loc_to_idx[l]
                                     self.array[ind][ind1] = val
-                        else:
-                            self.array[ind][ind] = 0
             self.array2 = [0] * len(self.locations)
             for k in range(len(self.locations)):
                 self.array2[k] = [0] * 4
             for loca in self.locations:
                 val = 1
                 for d in ['N', 'E', 'S', 'W']:
-                    for p in ['fwd', 'right', 'bckwd', 'left']:
-                        if d == 'N':
+                    for p in ['fwd', 'right', 'bckwd', 'left']:   #checking the compatibility of the sensor with
+                        if d == 'N':                              #the potential agent's position and orientation
                             if p == 'fwd':
                                 ret_loc = (loca[0], loca[1] + 1)
                             elif p == 'right':
