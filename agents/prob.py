@@ -54,16 +54,16 @@ class LocAgent:
         if (ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > self.size - 1) and p in percept and (p != 'fwd' or
         (p == 'fwd' and 'bump' not in percept)):
             val = val * (1 - self.eps_perc)
-        elif (ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > self.size - 1) and p in percept and 'bump' in percept and p == 'fwd':
+        elif (ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > (self.size - 1)) and 'bump' in percept and p == 'fwd':
             val = val * 1
-        elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= self.size - 1 and p not in percept:
+        elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= (self.size - 1) and p not in percept:
             val = val * (1 - self.eps_perc)
-        elif (ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > self.size - 1) and p not in percept:
+        elif (ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > (self.size - 1)) and p not in percept:
             val = val * self.eps_perc
-        elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= self.size - 1 and p in percept:
+        elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= (self.size - 1) and p in percept:
             val = val * self.eps_perc
-        elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= self.size - 1 and 'bump' in percept and p == 'fwd':
-            val = 0
+        elif ret_loc not in self.walls and ret_loc[0] >= 0 and ret_loc[0] <= (self.size - 1) and 'bump' in percept and p == 'fwd':
+            val = val * 0
         return val
 
     def __call__(self, percept):
