@@ -122,13 +122,13 @@ class LocAgent:
                             elif d == 'S':
                                 ret_loc = (loca[0], loca[1] - 1)
                             loc.append(ret_loc)
-                            if ret_loc in self.walls or (ret_loc[0] < 0 or ret_loc[0] > self.size - 1):
+                            if ret_loc in self.walls or ret_loc[0] < 0 or ret_loc[0] > self.size - 1:
                                 wall[ind] = 1
                                 cnt += 1           #count locations where agent can't go
                         ind = self.loc_to_idx[loca]
                         if cnt < 4:
-                            val = 0.95/(4 - cnt)    #if agent can go to few locations divide 0.95 by numer of locations
-                            self.array[ind][ind] = 0.05   #e.g. agent can go to two locations, so he is in one of them for 0.475 per cent
+                            val = (1 - self.eps_move)/(4 - cnt)    #if agent can go to few locations divide 0.95 by numer of locations
+                            self.array[ind][ind] = self.eps_move   #e.g. agent can go to two locations, so he is in one of them for 0.475 per cent
                             for i, l in enumerate(loc):
                                 if wall[i] == 0:
                                     ind1 = self.loc_to_idx[l]
